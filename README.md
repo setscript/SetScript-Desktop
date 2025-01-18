@@ -1,6 +1,6 @@
 # SetScript Nedir?
 
-yakında
+Yeni nesil kod paylaşım platformudır. Proje daha tam açılmadığı için pek bir şey eklemek istemiyorum şuan.
 
 # Proje Hakkında
 
@@ -12,7 +12,7 @@ yakında
 
 ### Eklenecekler :
 
-- 3 aşamalı ve rollü uyarı sistemi
+- çok gizli
 
 ## Özellikler
 
