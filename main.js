@@ -17,24 +17,8 @@ const settingsPath = path.join(setScriptPath, 'settings.json');
 
 // Varsayılan ayarlar
 const defaultSettings = {
-    window: {
-        startFullscreen: false,
-        alwaysOnTop: false,
-        rememberSize: true,
-        lastSize: {
-            width: 1200,
-            height: 800
-        }
-    },
-    pages: {
-        offlineAccess: true,
-        autoPreview: true,
-        autoThumbnail: true
-    },
-    appearance: {
-        darkMode: true,
-        sidebarOpen: true
-    }
+    isFullscreen: false,
+    isAlwaysOnTop: false
 };
 
 // Ayarları yükle
@@ -73,16 +57,10 @@ function applySettings(settings) {
     console.log('Ayarlar uygulanıyor:', settings);
 
     // Tam ekran ayarı
-    mainWindow.setFullScreen(settings.window.startFullscreen);
+    mainWindow.setFullScreen(settings.isFullscreen);
     
     // Her zaman üstte ayarı
-    mainWindow.setAlwaysOnTop(settings.window.alwaysOnTop);
-
-    // Pencere boyutu ayarı
-    if (settings.window.rememberSize && !settings.window.startFullscreen) {
-        const { width, height } = settings.window.lastSize;
-        mainWindow.setSize(width, height);
-    }
+    mainWindow.setAlwaysOnTop(settings.isAlwaysOnTop);
 
     // Ayarları kaydet
     saveSettings(settings);
@@ -104,12 +82,12 @@ async function createWindow() {
     const settings = loadSettings();
     
     mainWindow = new BrowserWindow({
-        width: settings.window.lastSize.width,
-        height: settings.window.lastSize.height,
+        width: 1200,
+        height: 800,
         frame: true,
         autoHideMenuBar: true,
-        fullscreen: settings.window.startFullscreen,
-        alwaysOnTop: settings.window.alwaysOnTop,
+        fullscreen: settings.isFullscreen,
+        alwaysOnTop: settings.isAlwaysOnTop,
         webPreferences: {
             nodeIntegration: false,
             contextIsolation: true,
@@ -133,10 +111,9 @@ async function createWindow() {
     mainWindow.on('resize', () => {
         if (!mainWindow.isFullScreen()) {
             const currentSettings = loadSettings();
-            if (currentSettings.window.rememberSize) {
+            if (currentSettings.isAlwaysOnTop) {
                 const [width, height] = mainWindow.getSize();
-                currentSettings.window.lastSize = { width, height };
-                saveSettings(currentSettings);
+                saveSettings({ ...currentSettings, width, height });
             }
         }
     });
@@ -144,23 +121,22 @@ async function createWindow() {
     // Tam ekran değiştiğinde
     mainWindow.on('enter-full-screen', () => {
         const currentSettings = loadSettings();
-        currentSettings.window.startFullscreen = true;
+        currentSettings.isFullscreen = true;
         saveSettings(currentSettings);
     });
 
     mainWindow.on('leave-full-screen', () => {
         const currentSettings = loadSettings();
-        currentSettings.window.startFullscreen = false;
+        currentSettings.isFullscreen = false;
         saveSettings(currentSettings);
     });
 
     // Pencere kapanmadan önce son ayarları kaydet
     mainWindow.on('close', () => {
         const currentSettings = loadSettings();
-        if (currentSettings.window.rememberSize && !mainWindow.isFullScreen()) {
+        if (!mainWindow.isFullScreen()) {
             const [width, height] = mainWindow.getSize();
-            currentSettings.window.lastSize = { width, height };
-            saveSettings(currentSettings);
+            saveSettings({ ...currentSettings, width, height });
         }
     });
 
@@ -356,7 +332,7 @@ app.on('web-contents-created', (event, contents) => {
 async function savePageOffline(url, id) {
     try {
         const settings = loadSettings();
-        if (!settings.pages.offlineAccess) return;
+        if (!settings.isAlwaysOnTop) return;
 
         const response = await fetch(url);
         const html = await response.text();
@@ -365,7 +341,7 @@ async function savePageOffline(url, id) {
         fs.writeFileSync(pagePath, html);
 
         // Eğer otomatik önizleme açıksa
-        if (settings.pages.autoPreview) {
+        if (settings.isAlwaysOnTop) {
             // Webview kullanarak sayfanın ekran görüntüsünü al
             const view = new BrowserView({
                 webPreferences: {
