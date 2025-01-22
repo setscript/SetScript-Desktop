@@ -1,6 +1,6 @@
 # SetScript Masaüstü
 
-![SetScript Banner](assets/banner.png)
+![SetScript Banner](https://socialify.git.ci/setscript/SetScript-Desktop/image?description=1&font=Inter&forks=1&language=1&name=1&owner=1&pattern=Floating+Cogs&stargazers=1&theme=Dark)
 
 SetScript Desktop, yeni nesil kod paylaşım platformu SetScript'in resmi masaüstü uygulamasıdır. www.setscript.com'un tüm özelliklerine ekstra olarak masa üstü programına özel özellikleri ve çevrimdışı destek ile masaüstünüzde deneyimleyin.
 
@@ -18,6 +18,16 @@ SetScript Desktop, yeni nesil kod paylaşım platformu SetScript'in resmi masaü
 | Version | Type | Download Link |
 | ---- | ---- | ----------- |
 | v0.0.1 | Alpha | This version is closed for download |
+
+## Star History
+<a href="https://star-history.com/#setscript/SetScript-Desktop&Date">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=setscript/SetScript-Desktop&type=Date&theme=dark" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=setscript/SetScript-Desktop&type=Date" />
+   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=setscript/SetScript-Desktop&type=Date" />
+ </picture>
+</a>
+
 
 ## Teknoloji Altyapısı
 
