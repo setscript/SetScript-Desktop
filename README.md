@@ -8,7 +8,7 @@ yakında
 
 # SetScript Masa Üstü Uygulaması Hakkında
 
-yakında 
+SetScript'in masaüstü uygulaması versiyonu. www.setscript.com web sitesinin tüm özelliklerini masaüstünüzde kullanmanızı sağlar.
 
 ### Eklenecekler :
 
@@ -16,30 +16,46 @@ yakında
 
 ## Özellikler
 
-- yakında
+- Web sitesinin tüm içeriğine masaüstünden erişim
+- Çevrimdışı mod desteği
+- Sistem bildirimleri
+- Özelleştirilebilir ayarlar
+- Modern ve kullanıcı dostu arayüz
 
 ## Kurulum
 
-1. Repoyu klonlayın veya ZIP olarak indirin
-2. Proje dizinine gidin ve `npm install` komutunu çalıştırarak bağımlılıkları yükleyin
-3. İstediğiniz gibi ayarlayın
-4. `npm run dev` komutu ile başlatın
+1. Node.js'i bilgisayarınıza yükleyin (https://nodejs.org)
+2. Projeyi klonlayın:
+   ```bash
+   git clone https://github.com/yourusername/SetScript.git
+   cd SetScript
+   ```
+3. Bağımlılıkları yükleyin:
+   ```bash
+   npm install
+   ```
 
-## Kullanım
+## Geliştirme
 
-Yakında
+Uygulamayı geliştirme modunda başlatmak için:
 
+```bash
+npm start
+```
 
-## Topluluk & Destek
+## Dağıtım
 
-Yakında
+Windows için kurulum dosyası oluşturmak için:
+
+```bash
+npm run build
+```
+
+Kurulum dosyası `dist` klasöründe oluşturulacaktır.
 
 ## Lisans
 
-Bu proje MIT lisansı altında lisanslanmıştır. Daha fazla bilgi için `LICENSE` dosyasına bakın.
-
-
-
+MIT License - Detaylar için LICENSE dosyasına bakın.
 
 --
 
