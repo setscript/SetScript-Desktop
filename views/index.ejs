@@ -429,6 +429,133 @@
             border-color: #2196f3;
         }
 
+        /* Ayarlar Modal Stili */
+        .settings-form {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .settings-section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 15px;
+        }
+
+        .settings-section h3 {
+            color: #fff;
+            margin: 0 0 15px 0;
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        .setting-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            padding: 8px 0;
+        }
+
+        .setting-info {
+            flex: 1;
+        }
+
+        .setting-info h4 {
+            color: #fff;
+            margin: 0;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .setting-info p {
+            color: #aaa;
+            margin: 4px 0 0 0;
+            font-size: 12px;
+        }
+
+        /* Toggle Switch */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #444;
+            transition: .4s;
+            border-radius: 24px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #2196F3;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(20px);
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            padding: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .modal-actions button {
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .primary-button {
+            background: #2196F3;
+            color: white;
+        }
+
+        .primary-button:hover {
+            background: #1976D2;
+        }
+
+        .secondary-button {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .secondary-button:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
         /* Scrollbar */
         ::-webkit-scrollbar {
             width: 8px;
@@ -523,18 +650,101 @@
         <div class="modal-content">
             <h2>Ayarlar</h2>
             <div class="settings-form">
-                <div class="setting-item">
-                    <label for="fullscreenToggle">Tam Ekran</label>
-                    <input type="checkbox" id="fullscreenToggle">
+                <div class="settings-section">
+                    <h3>Pencere Ayarları</h3>
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <h4>Tam Ekran Başlat</h4>
+                            <p>Uygulama başlatıldığında otomatik olarak tam ekran modunda açılır</p>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="fullscreenToggle">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <h4>Her Zaman Üstte</h4>
+                            <p>Pencereyi diğer pencerelerin üzerinde tutar</p>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="alwaysOnTopToggle">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <h4>Pencere Boyutunu Hatırla</h4>
+                            <p>Bir sonraki açılışta son pencere boyutunu kullanır</p>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="rememberSizeToggle">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
                 </div>
-                <div class="setting-item">
-                    <label for="alwaysOnTopToggle">Her Zaman Üstte</label>
-                    <input type="checkbox" id="alwaysOnTopToggle">
+
+                <div class="settings-section">
+                    <h3>Sayfa Kaydetme Ayarları</h3>
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <h4>Çevrimdışı Erişim</h4>
+                            <p>Sayfaları çevrimdışı görüntüleyebilmek için kaydeder</p>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="offlineAccessToggle">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <h4>Otomatik Önizleme</h4>
+                            <p>Kaydedilen sayfalar için otomatik önizleme resmi oluşturur</p>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="autoPreviewToggle">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <h4>Otomatik Küçük Resim</h4>
+                            <p>Kaydedilen sayfalar için küçük resim oluşturur</p>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="autoThumbnailToggle">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Görünüm Ayarları</h3>
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <h4>Karanlık Mod</h4>
+                            <p>Koyu renk temasını kullanır</p>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="darkModeToggle">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <h4>Kenar Çubuğunu Hatırla</h4>
+                            <p>Bir sonraki açılışta kenar çubuğunun durumunu hatırlar</p>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="sidebarOpenToggle">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
                 </div>
             </div>
             <div class="modal-actions">
-                <button onclick="saveSettings()" class="primary-button">Kaydet</button>
                 <button onclick="hideSettingsModal()" class="secondary-button">İptal</button>
+                <button onclick="saveSettings()" class="primary-button">Kaydet</button>
             </div>
         </div>
     </div>
@@ -788,14 +998,41 @@
 
         // Ayarlar işlemleri
         window.electronAPI.onSettingsLoaded((event, settings) => {
-            document.getElementById('fullscreenToggle').checked = settings.isFullscreen || false;
-            document.getElementById('alwaysOnTopToggle').checked = settings.isAlwaysOnTop || false;
+            // Pencere ayarları
+            document.getElementById('fullscreenToggle').checked = settings.window.startFullscreen || false;
+            document.getElementById('alwaysOnTopToggle').checked = settings.window.alwaysOnTop || false;
+            document.getElementById('rememberSizeToggle').checked = settings.window.rememberSize || false;
+
+            // Sayfa kaydetme ayarları
+            document.getElementById('offlineAccessToggle').checked = settings.pages.offlineAccess || false;
+            document.getElementById('autoPreviewToggle').checked = settings.pages.autoPreview || false;
+            document.getElementById('autoThumbnailToggle').checked = settings.pages.autoThumbnail || false;
+
+            // Görünüm ayarları
+            document.getElementById('darkModeToggle').checked = settings.appearance.darkMode || false;
+            document.getElementById('sidebarOpenToggle').checked = settings.appearance.sidebarOpen || false;
         });
 
         function saveSettings() {
             const settings = {
-                isFullscreen: document.getElementById('fullscreenToggle').checked,
-                isAlwaysOnTop: document.getElementById('alwaysOnTopToggle').checked
+                window: {
+                    startFullscreen: document.getElementById('fullscreenToggle').checked,
+                    alwaysOnTop: document.getElementById('alwaysOnTopToggle').checked,
+                    rememberSize: document.getElementById('rememberSizeToggle').checked,
+                    lastSize: {
+                        width: window.innerWidth,
+                        height: window.innerHeight
+                    }
+                },
+                pages: {
+                    offlineAccess: document.getElementById('offlineAccessToggle').checked,
+                    autoPreview: document.getElementById('autoPreviewToggle').checked,
+                    autoThumbnail: document.getElementById('autoThumbnailToggle').checked
+                },
+                appearance: {
+                    darkMode: document.getElementById('darkModeToggle').checked,
+                    sidebarOpen: document.getElementById('sidebarOpenToggle').checked
+                }
             };
             
             window.electronAPI.saveSettings(settings);

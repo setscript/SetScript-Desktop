@@ -19,8 +19,8 @@ const settingsPath = path.join(setScriptPath, 'settings.json');
 const defaultSettings = {
     window: {
         startFullscreen: false,
-        rememberWindowSize: true,
         alwaysOnTop: false,
+        rememberSize: true,
         lastSize: {
             width: 1200,
             height: 800
@@ -28,7 +28,12 @@ const defaultSettings = {
     },
     pages: {
         offlineAccess: true,
-        autoPagePreview: true
+        autoPreview: true,
+        autoThumbnail: true
+    },
+    appearance: {
+        darkMode: true,
+        sidebarOpen: true
     }
 };
 
@@ -74,7 +79,7 @@ function applySettings(settings) {
     mainWindow.setAlwaysOnTop(settings.window.alwaysOnTop);
 
     // Pencere boyutu ayarı
-    if (settings.window.rememberWindowSize && !settings.window.startFullscreen) {
+    if (settings.window.rememberSize && !settings.window.startFullscreen) {
         const { width, height } = settings.window.lastSize;
         mainWindow.setSize(width, height);
     }
@@ -128,7 +133,7 @@ async function createWindow() {
     mainWindow.on('resize', () => {
         if (!mainWindow.isFullScreen()) {
             const currentSettings = loadSettings();
-            if (currentSettings.window.rememberWindowSize) {
+            if (currentSettings.window.rememberSize) {
                 const [width, height] = mainWindow.getSize();
                 currentSettings.window.lastSize = { width, height };
                 saveSettings(currentSettings);
@@ -152,7 +157,7 @@ async function createWindow() {
     // Pencere kapanmadan önce son ayarları kaydet
     mainWindow.on('close', () => {
         const currentSettings = loadSettings();
-        if (currentSettings.window.rememberWindowSize && !mainWindow.isFullScreen()) {
+        if (currentSettings.window.rememberSize && !mainWindow.isFullScreen()) {
             const [width, height] = mainWindow.getSize();
             currentSettings.window.lastSize = { width, height };
             saveSettings(currentSettings);
@@ -360,7 +365,7 @@ async function savePageOffline(url, id) {
         fs.writeFileSync(pagePath, html);
 
         // Eğer otomatik önizleme açıksa
-        if (settings.pages.autoPagePreview) {
+        if (settings.pages.autoPreview) {
             // Webview kullanarak sayfanın ekran görüntüsünü al
             const view = new BrowserView({
                 webPreferences: {
