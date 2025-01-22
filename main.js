@@ -8,6 +8,165 @@ const expressApp = express();
 let mainWindow;
 let server;
 
+// SetScript klasörü yolları
+const documentsPath = app.getPath('documents');
+const setScriptPath = path.join(documentsPath, 'SetScript');
+const savesPath = path.join(setScriptPath, 'Saves');
+const offlinePagesPath = path.join(setScriptPath, 'OfflinePages');
+const settingsPath = path.join(setScriptPath, 'settings.json');
+
+// Varsayılan ayarlar
+const defaultSettings = {
+    window: {
+        startFullscreen: false,
+        rememberWindowSize: true,
+        alwaysOnTop: false,
+        lastSize: {
+            width: 1200,
+            height: 800
+        }
+    },
+    pages: {
+        offlineAccess: true,
+        autoPagePreview: true
+    }
+};
+
+// Ayarları yükle
+function loadSettings() {
+    try {
+        if (fs.existsSync(settingsPath)) {
+            const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
+            console.log('Ayarlar yüklendi:', settings);
+            return { ...defaultSettings, ...settings };
+        }
+    } catch (error) {
+        console.error('Ayarlar yüklenirken hata:', error);
+    }
+    return defaultSettings;
+}
+
+// Ayarları kaydet
+function saveSettings(settings) {
+    try {
+        if (!fs.existsSync(setScriptPath)) {
+            fs.mkdirSync(setScriptPath, { recursive: true });
+        }
+        fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+        console.log('Ayarlar kaydedildi:', settings);
+        return true;
+    } catch (error) {
+        console.error('Ayarlar kaydedilirken hata:', error);
+        return false;
+    }
+}
+
+// Ayarları uygula
+function applySettings(settings) {
+    if (!mainWindow) return;
+
+    console.log('Ayarlar uygulanıyor:', settings);
+
+    // Tam ekran ayarı
+    mainWindow.setFullScreen(settings.window.startFullscreen);
+    
+    // Her zaman üstte ayarı
+    mainWindow.setAlwaysOnTop(settings.window.alwaysOnTop);
+
+    // Pencere boyutu ayarı
+    if (settings.window.rememberWindowSize && !settings.window.startFullscreen) {
+        const { width, height } = settings.window.lastSize;
+        mainWindow.setSize(width, height);
+    }
+
+    // Ayarları kaydet
+    saveSettings(settings);
+}
+
+async function createWindow() {
+    // Klasörleri oluştur
+    if (!fs.existsSync(setScriptPath)) {
+        fs.mkdirSync(setScriptPath, { recursive: true });
+    }
+    if (!fs.existsSync(savesPath)) {
+        fs.mkdirSync(savesPath, { recursive: true });
+    }
+    if (!fs.existsSync(offlinePagesPath)) {
+        fs.mkdirSync(offlinePagesPath, { recursive: true });
+    }
+
+    // Ayarları yükle
+    const settings = loadSettings();
+    
+    mainWindow = new BrowserWindow({
+        width: settings.window.lastSize.width,
+        height: settings.window.lastSize.height,
+        frame: true,
+        autoHideMenuBar: true,
+        fullscreen: settings.window.startFullscreen,
+        alwaysOnTop: settings.window.alwaysOnTop,
+        webPreferences: {
+            nodeIntegration: false,
+            contextIsolation: true,
+            webviewTag: true,
+            preload: path.join(__dirname, 'preload.js'),
+            webSecurity: true,
+            sandbox: false,
+            devTools: true
+        }
+    });
+
+    const serverUrl = await startServer();
+    await mainWindow.loadURL(serverUrl);
+
+    // Sayfa yüklendikten sonra ayarları uygula
+    mainWindow.webContents.on('did-finish-load', () => {
+        applySettings(settings);
+    });
+
+    // Pencere boyutu değiştiğinde
+    mainWindow.on('resize', () => {
+        if (!mainWindow.isFullScreen()) {
+            const currentSettings = loadSettings();
+            if (currentSettings.window.rememberWindowSize) {
+                const [width, height] = mainWindow.getSize();
+                currentSettings.window.lastSize = { width, height };
+                saveSettings(currentSettings);
+            }
+        }
+    });
+
+    // Tam ekran değiştiğinde
+    mainWindow.on('enter-full-screen', () => {
+        const currentSettings = loadSettings();
+        currentSettings.window.startFullscreen = true;
+        saveSettings(currentSettings);
+    });
+
+    mainWindow.on('leave-full-screen', () => {
+        const currentSettings = loadSettings();
+        currentSettings.window.startFullscreen = false;
+        saveSettings(currentSettings);
+    });
+
+    // Pencere kapanmadan önce son ayarları kaydet
+    mainWindow.on('close', () => {
+        const currentSettings = loadSettings();
+        if (currentSettings.window.rememberWindowSize && !mainWindow.isFullScreen()) {
+            const [width, height] = mainWindow.getSize();
+            currentSettings.window.lastSize = { width, height };
+            saveSettings(currentSettings);
+        }
+    });
+
+    mainWindow.on('closed', () => {
+        mainWindow = null;
+        if (server) {
+            server.close();
+        }
+    });
+}
+
 // Express.js ayarları
 expressApp.set('view engine', 'ejs');
 expressApp.set('views', path.join(__dirname, 'views'));
@@ -29,104 +188,115 @@ function startServer() {
     });
 }
 
-// SetScript klasörü yolları
-const documentsPath = app.getPath('documents');
-const setScriptPath = path.join(documentsPath, 'SetScript');
-const savesPath = path.join(setScriptPath, 'Saves');
-
-// Klasörleri oluştur
-function createDirectories() {
+// Ayarlar event handler'ları
+ipcMain.on('save-settings', (event, settings) => {
     try {
+        // SetScript klasörünü kontrol et
         if (!fs.existsSync(setScriptPath)) {
             fs.mkdirSync(setScriptPath, { recursive: true });
         }
-        if (!fs.existsSync(savesPath)) {
-            fs.mkdirSync(savesPath, { recursive: true });
+
+        const settingsPath = path.join(setScriptPath, 'settings.json');
+        fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+
+        // Ayarları uygula
+        if (settings.isFullscreen) {
+            mainWindow.setFullScreen(true);
+        } else {
+            mainWindow.setFullScreen(false);
         }
+
+        mainWindow.setAlwaysOnTop(settings.isAlwaysOnTop);
+
+        // Tüm pencerelere ayarları gönder
+        BrowserWindow.getAllWindows().forEach(window => {
+            window.webContents.send('settings-loaded', settings);
+        });
     } catch (error) {
-        console.error('Klasör oluşturma hatası:', error);
+        console.error('Ayarları kaydetme hatası:', error);
     }
-}
+});
 
-async function createWindow() {
-    createDirectories();
-
-    // Local dosya protokolünü kaydet
-    protocol.registerFileProtocol('local-file', (request, callback) => {
-        const filePath = request.url.replace('local-file://', '');
-        try {
-            return callback(decodeURIComponent(filePath));
-        } catch (error) {
-            console.error(error);
-            return callback(404);
-        }
-    });
-
-    const serverUrl = await startServer();
-
-    mainWindow = new BrowserWindow({
-        width: 1200,
-        height: 800,
-        webPreferences: {
-            nodeIntegration: false,
-            contextIsolation: true,
-            webviewTag: true,
-            preload: path.join(__dirname, 'preload.js'),
-            webSecurity: true,
-            sandbox: false,
-            devTools: false
-        }
-    });
-
-    mainWindow.loadURL(serverUrl);
-
-    mainWindow.on('closed', () => {
-        mainWindow = null;
-        if (server) {
-            server.close();
-        }
-    });
-}
-
-app.whenReady().then(() => {
+ipcMain.on('get-settings', (event) => {
     try {
-        // SetScript klasörünü oluştur
+        const settingsPath = path.join(setScriptPath, 'settings.json');
+        let settings = {
+            isFullscreen: false,
+            isAlwaysOnTop: false
+        };
+
+        if (fs.existsSync(settingsPath)) {
+            const data = fs.readFileSync(settingsPath, 'utf8');
+            settings = JSON.parse(data);
+        }
+
+        event.sender.send('settings-loaded', settings);
+    } catch (error) {
+        console.error('Ayarları yükleme hatası:', error);
+        event.sender.send('settings-loaded', {
+            isFullscreen: false,
+            isAlwaysOnTop: false
+        });
+    }
+});
+
+// Sayfa kaydetme işlemi
+ipcMain.handle('save-page', async (event, pageData) => {
+    try {
+        // SetScript klasörünü kontrol et
         if (!fs.existsSync(setScriptPath)) {
             fs.mkdirSync(setScriptPath, { recursive: true });
-            console.log('SetScript klasörü oluşturuldu:', setScriptPath);
         }
 
-        // Saves klasörünü oluştur
-        if (!fs.existsSync(savesPath)) {
-            fs.mkdirSync(savesPath, { recursive: true });
-            console.log('Saves klasörü oluşturuldu:', savesPath);
+        // bookmarks.json dosyasını oku veya oluştur
+        const bookmarksPath = path.join(setScriptPath, 'bookmarks.json');
+        let bookmarks = [];
+        
+        if (fs.existsSync(bookmarksPath)) {
+            const data = fs.readFileSync(bookmarksPath, 'utf8');
+            bookmarks = JSON.parse(data);
         }
 
-        // bookmarks.json dosyasını kontrol et
-        const jsonPath = path.join(setScriptPath, 'bookmarks.json');
-        if (!fs.existsSync(jsonPath)) {
-            fs.writeFileSync(jsonPath, JSON.stringify([], null, 2));
-            console.log('bookmarks.json oluşturuldu');
-        }
+        // Yeni kayıt için ID oluştur
+        const newBookmark = {
+            id: Date.now().toString(),
+            name: pageData.name,
+            url: pageData.url,
+            desc: pageData.desc || '',
+            icon: pageData.icon || '',
+            createdAt: new Date().toISOString()
+        };
 
-        createWindow();
+        // Yeni kaydı listeye ekle
+        bookmarks.push(newBookmark);
+
+        // Dosyaya kaydet
+        fs.writeFileSync(bookmarksPath, JSON.stringify(bookmarks, null, 2));
+
+        // Tüm pencerelere güncel listeyi gönder
+        BrowserWindow.getAllWindows().forEach(window => {
+            window.webContents.send('saved-pages', bookmarks);
+        });
+
+        return { success: true, bookmark: newBookmark };
     } catch (error) {
-        console.error('Uygulama başlatma hatası:', error);
+        console.error('Sayfa kaydetme hatası:', error);
+        throw error;
     }
 });
 
-app.on('window-all-closed', () => {
-    if (process.platform !== 'darwin') {
-        if (server) {
-            server.close();
+// Kaydedilmiş sayfaları getir
+ipcMain.handle('get-saved-pages', async () => {
+    try {
+        const bookmarksPath = path.join(setScriptPath, 'bookmarks.json');
+        if (fs.existsSync(bookmarksPath)) {
+            const data = fs.readFileSync(bookmarksPath, 'utf8');
+            return JSON.parse(data);
         }
-        app.quit();
-    }
-});
-
-app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-        createWindow();
+        return [];
+    } catch (error) {
+        console.error('Kaydedilmiş sayfaları getirme hatası:', error);
+        return [];
     }
 });
 
@@ -162,102 +332,83 @@ app.on('web-contents-created', (event, contents) => {
     }
 });
 
-// Sayfa kaydetme işlemi
-ipcMain.on('save-page', async (event, data) => {
+// Sayfayı çevrimdışı kaydet
+async function savePageOffline(url, id) {
     try {
-        console.log('Sayfa kaydediliyor:', data);
+        const settings = loadSettings();
+        if (!settings.pages.offlineAccess) return;
 
-        if (!data.url) {
-            throw new Error('URL bulunamadı');
-        }
-
-        // URL'yi kontrol et
-        try {
-            const parsedUrl = new URL(data.url);
-            if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
-                throw new Error('Geçersiz URL protokolü');
-            }
-        } catch (error) {
-            throw new Error('Geçersiz URL formatı');
-        }
-
-        const timestamp = Date.now();
-        let iconPath = '';
-
-        // Eğer ikon varsa kaydet
-        if (data.icon && data.icon.includes('base64')) {
-            const base64Data = data.icon.split(';base64,').pop();
-            if (base64Data) {
-                const iconName = `icon_${timestamp}.png`;
-                iconPath = path.join(savesPath, iconName);
-                fs.writeFileSync(iconPath, base64Data, 'base64');
-                iconPath = `local-file://${iconPath}`;
-            }
-        } else {
-            // Varsayılan ikonu kullan
-            iconPath = 'images/save-icon.png';
-        }
+        const response = await fetch(url);
+        const html = await response.text();
         
-        const pageData = {
-            name: data.name,
-            desc: data.desc || '',
-            url: data.url,
-            iconPath: iconPath,
-            timestamp: timestamp
-        };
+        const pagePath = path.join(offlinePagesPath, `${id}.html`);
+        fs.writeFileSync(pagePath, html);
 
-        console.log('Kaydedilen veri:', pageData);
-
-        // JSON dosyasını oku veya oluştur
-        const jsonPath = path.join(setScriptPath, 'bookmarks.json');
-        let bookmarks = [];
-        
-        if (fs.existsSync(jsonPath)) {
-            const content = fs.readFileSync(jsonPath, 'utf8');
-            if (content) {
-                bookmarks = JSON.parse(content);
-            }
+        // Eğer otomatik önizleme açıksa
+        if (settings.pages.autoPagePreview) {
+            // Webview kullanarak sayfanın ekran görüntüsünü al
+            const view = new BrowserView({
+                webPreferences: {
+                    offscreen: true
+                }
+            });
+            
+            mainWindow.setBrowserView(view);
+            view.setBounds({ x: 0, y: 0, width: 1200, height: 800 });
+            view.webContents.loadURL(url);
+            
+            // Sayfa yüklendiğinde ekran görüntüsü al
+            view.webContents.on('did-finish-load', async () => {
+                const image = await view.webContents.capturePage();
+                const previewPath = path.join(offlinePagesPath, `${id}.png`);
+                fs.writeFileSync(previewPath, image.toPNG());
+                
+                // Temizlik
+                mainWindow.removeBrowserView(view);
+            });
         }
 
-        // Yeni kaydı ekle
-        bookmarks.unshift(pageData);
-        fs.writeFileSync(jsonPath, JSON.stringify(bookmarks, null, 2));
-
-        // Başarılı mesajı gönder
-        event.reply('save-complete', pageData);
-        
-        // Tüm kayıtları yeniden yükle
-        mainWindow.webContents.send('saved-pages', bookmarks);
+        return true;
     } catch (error) {
-        console.error('Kaydetme hatası:', error);
-        event.reply('save-error', error.message);
+        console.error('Sayfa çevrimdışı kaydedilirken hata:', error);
+        return false;
     }
-});
+}
 
-// Kaydedilmiş sayfaları getir
-ipcMain.on('get-saved-pages', (event) => {
+// Çevrimdışı sayfayı yükle
+function loadOfflinePage(id) {
     try {
-        console.log('Kaydedilmiş sayfalar istendi');
-        
-        const jsonPath = path.join(setScriptPath, 'bookmarks.json');
-        let bookmarks = [];
-        
-        if (fs.existsSync(jsonPath)) {
-            console.log('bookmarks.json bulundu');
-            const content = fs.readFileSync(jsonPath, 'utf8');
-            if (content) {
-                bookmarks = JSON.parse(content);
-                console.log(`${bookmarks.length} kayıt yüklendi`);
-            }
-        } else {
-            console.log('bookmarks.json bulunamadı, yeni dosya oluşturuluyor');
-            fs.writeFileSync(jsonPath, JSON.stringify([], null, 2));
+        const pagePath = path.join(offlinePagesPath, `${id}.html`);
+        if (fs.existsSync(pagePath)) {
+            return fs.readFileSync(pagePath, 'utf8');
         }
-
-        event.reply('saved-pages', bookmarks);
+        return null;
     } catch (error) {
-        console.error('Kayıtları getirme hatası:', error);
-        event.reply('saved-pages', []);
+        console.error('Çevrimdışı sayfa yüklenirken hata:', error);
+        return null;
+    }
+}
+
+// Sayfa silme işlemi
+ipcMain.handle('delete-page', async (event, pageId) => {
+    try {
+        const bookmarksPath = path.join(setScriptPath, 'bookmarks.json');
+        if (fs.existsSync(bookmarksPath)) {
+            let bookmarks = JSON.parse(fs.readFileSync(bookmarksPath, 'utf8'));
+            bookmarks = bookmarks.filter(page => page.id !== pageId);
+            fs.writeFileSync(bookmarksPath, JSON.stringify(bookmarks, null, 2));
+
+            // Tüm pencerelere güncel listeyi gönder
+            BrowserWindow.getAllWindows().forEach(window => {
+                window.webContents.send('saved-pages', bookmarks);
+            });
+
+            return { success: true };
+        }
+        return { success: false, error: 'Bookmarks dosyası bulunamadı' };
+    } catch (error) {
+        console.error('Sayfa silme hatası:', error);
+        throw error;
     }
 });
 
@@ -277,7 +428,7 @@ ipcMain.on('edit-bookmark', async (event, data) => {
         }
 
         // Düzenlenecek kaydı bul
-        const index = bookmarks.findIndex(bookmark => bookmark.timestamp.toString() === data.id.toString());
+        const index = bookmarks.findIndex(bookmark => bookmark.id.toString() === data.id.toString());
         
         if (index === -1) {
             throw new Error('Kayıt bulunamadı');
@@ -287,7 +438,7 @@ ipcMain.on('edit-bookmark', async (event, data) => {
         bookmarks[index] = {
             ...bookmarks[index],
             name: data.name,
-            desc: data.desc
+            description: data.description
         };
 
         // JSON dosyasını güncelle
@@ -320,22 +471,22 @@ ipcMain.on('delete-bookmark', async (event, id) => {
         }
 
         // Silinecek kaydı bul
-        const bookmark = bookmarks.find(b => b.timestamp.toString() === id.toString());
+        const bookmark = bookmarks.find(b => b.id.toString() === id.toString());
         
         if (!bookmark) {
             throw new Error('Kayıt bulunamadı');
         }
 
         // İkon dosyasını sil
-        if (bookmark.iconPath && bookmark.iconPath.includes('icon_')) {
-            const iconPath = bookmark.iconPath.replace('local-file://', '');
+        if (bookmark.icon && bookmark.icon.includes('icon_')) {
+            const iconPath = bookmark.icon.replace('local-file://', '');
             if (fs.existsSync(iconPath)) {
                 fs.unlinkSync(iconPath);
             }
         }
 
         // Kaydı sil
-        bookmarks = bookmarks.filter(b => b.timestamp.toString() !== id.toString());
+        bookmarks = bookmarks.filter(b => b.id.toString() !== id.toString());
 
         // JSON dosyasını güncelle
         fs.writeFileSync(jsonPath, JSON.stringify(bookmarks, null, 2));
@@ -348,5 +499,26 @@ ipcMain.on('delete-bookmark', async (event, id) => {
     } catch (error) {
         console.error('Silme hatası:', error);
         event.reply('bookmark-deleted-error', error.message);
+    }
+});
+
+// Uygulama başlatıldığında
+app.whenReady().then(async () => {
+    try {
+        await createWindow();
+    } catch (error) {
+        console.error('Uygulama başlatma hatası:', error);
+    }
+});
+
+app.on('window-all-closed', () => {
+    if (process.platform !== 'darwin') {
+        app.quit();
+    }
+});
+
+app.on('activate', () => {
+    if (mainWindow === null) {
+        createWindow();
     }
 });

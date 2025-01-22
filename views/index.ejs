@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SetScript Desktop</title>
     <style>
+        /* Genel Stiller */
         * {
             margin: 0;
             padding: 0;
@@ -12,25 +13,21 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
         }
 
-        /* Scrollbar'ı gizle */
-        ::-webkit-scrollbar {
-            width: 0;
-            height: 0;
-            background: transparent;
-        }
-
-        * {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
-
         body {
             overflow: hidden;
+            height: 100vh;
+            background: #0f0f0f;
+        }
+
+        /* Webview */
+        #webview-container {
+            height: 100vh;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         #webview {
-            width: 100vw;
-            height: 100vh;
+            width: 100%;
+            height: 100%;
         }
 
         /* Overlay */
@@ -53,258 +50,108 @@
             visibility: visible;
         }
 
-        /* Sidebar Container */
+        /* Sidebar */
         #sidebar-container {
             position: fixed;
             right: 0;
             top: 0;
             height: 100vh;
-            z-index: 999;
-            display: flex;
+            width: 380px;
+            background: #1a1a1a;
             transform: translateX(380px);
-            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 999;
+            box-shadow: -5px 0 25px rgba(0, 0, 0, 0.15);
         }
 
         #sidebar-container.open {
             transform: translateX(0);
         }
 
-        /* Toggle Button */
-        #sidebar-toggle {
-            width: 32px;
-            height: 60px;
-            margin-top: calc(50vh - 30px);
-            background: rgba(28, 28, 28, 0.95);
-            border: none;
-            border-top-left-radius: 8px;
-            border-bottom-left-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            cursor: pointer;
-            backdrop-filter: blur(8px);
-            box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
-        }
-
-        #sidebar-toggle:hover {
-            background: rgba(40, 40, 40, 0.95);
-        }
-
-        #sidebar-toggle .arrow {
-            transform: rotate(180deg);
-            transition: transform 0.3s ease;
-            font-size: 18px;
-        }
-
-        #sidebar-container.open #sidebar-toggle .arrow {
-            transform: rotate(0deg);
-        }
-
-        /* Sidebar */
-        #sidebar {
-            width: 380px;
-            height: 100vh;
-            background: rgba(28, 28, 28, 0.95);
-            backdrop-filter: blur(20px);
-            color: white;
-            padding: 2rem;
-            box-shadow: -10px 0 20px -5px rgba(0, 0, 0, 0.15);
+        .sidebar-content {
+            height: 100%;
             display: flex;
             flex-direction: column;
-            gap: 1.5rem;
+            padding: 24px;
         }
 
-        /* Sidebar Header */
         .sidebar-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 1rem;
-            padding-bottom: 1rem;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .sidebar-title {
-            font-size: 1.5rem;
+            font-size: 24px;
             font-weight: 600;
             color: #fff;
+            margin: 0;
         }
 
-        /* Sidebar Content */
-        .sidebar-content {
-            flex: 1;
-            overflow-y: auto;
-            padding-right: 0.5rem;
-        }
-
-        /* Sidebar Buttons */
+        /* Sidebar Butonları */
         .sidebar-button {
+            width: 100%;
+            padding: 12px 16px;
             background: rgba(255, 255, 255, 0.05);
             border: none;
-            color: white;
-            padding: 1rem 1.25rem;
+            border-radius: 12px;
+            color: #fff;
+            font-size: 16px;
+            font-weight: 500;
             display: flex;
             align-items: center;
-            gap: 1rem;
-            width: 100%;
+            gap: 8px;
             cursor: pointer;
-            border-radius: 12px;
-            margin-bottom: 0.75rem;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            font-size: 1rem;
-            font-weight: 500;
+            transition: all 0.2s ease;
         }
 
         .sidebar-button:hover {
             background: rgba(255, 255, 255, 0.1);
-            transform: translateX(-4px);
+            transform: translateY(-2px);
         }
 
         .sidebar-button:active {
-            transform: translateX(-2px);
+            transform: translateY(0);
         }
 
-        .sidebar-button.active {
-            background: #1DB954;
+        /* Kaydedilen Öğeler */
+        .saved-items {
+            flex: 1;
+            overflow-y: auto;
+            margin: 16px -8px;
+            padding: 0 8px;
         }
 
-        /* Sidebar Footer */
-        .sidebar-footer {
-            padding-top: 1rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            font-size: 0.875rem;
-            color: rgba(255, 255, 255, 0.6);
-            text-align: center;
-        }
-
-        /* Modal */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.7);
-            z-index: 1000;
-            backdrop-filter: blur(5px);
-        }
-
-        .modal-content {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background-color: #2a2a2a;
-            padding: 24px;
-            border-radius: 12px;
-            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
-            width: 90%;
-            max-width: 400px;
-        }
-
-        .modal-header {
-            margin-bottom: 20px;
-        }
-
-        .modal-title {
-            font-size: 18px;
-            font-weight: 600;
-            color: #ffffff;
-            margin: 0;
-        }
-
-        .modal-body {
-            margin-bottom: 24px;
-        }
-
-        .modal-input {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 12px;
-            background-color: #363636;
-            border: 1px solid #404040;
-            border-radius: 6px;
-            color: #ffffff;
-            font-size: 14px;
-        }
-
-        .modal-input:focus {
-            outline: none;
-            border-color: #505050;
-        }
-
-        .modal-button {
-            padding: 8px 16px;
-            border: none;
-            border-radius: 6px;
-            font-size: 14px;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-
-        .modal-button.primary {
-            background-color: #2196F3;
-            color: white;
-        }
-
-        .modal-button.primary:hover {
-            background-color: #1976D2;
-        }
-
-        .modal-button.secondary {
-            background-color: #424242;
-            color: white;
-        }
-
-        .modal-button.secondary:hover {
-            background-color: #505050;
-        }
-
-        .modal-button.danger {
-            background-color: #f44336;
-            color: white;
-        }
-
-        .modal-button.danger:hover {
-            background-color: #d32f2f;
-        }
-
-        /* Kayıt listesi stilleri */
         .saved-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 8px;
-            margin: 4px 0;
-            border-radius: 8px;
-            background-color: #2a2a2a;
-            transition: background-color 0.2s;
-            cursor: pointer;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            margin-bottom: 12px;
+            overflow: hidden;
+            transition: all 0.2s ease;
         }
 
         .saved-item:hover {
-            background-color: #363636;
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
         }
 
-        .saved-item:hover .item-actions {
-            opacity: 1;
-        }
-
-        .item-content {
+        .saved-item-content {
+            padding: 16px;
             display: flex;
             align-items: center;
             gap: 12px;
-            flex: 1;
+            cursor: pointer;
         }
 
         .saved-item-icon {
             width: 32px;
             height: 32px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
+            overflow: hidden;
         }
 
         .saved-item-icon img {
@@ -315,69 +162,145 @@
 
         .saved-item-info {
             flex: 1;
+            min-width: 0;
         }
 
-        .saved-item-title {
-            font-size: 14px;
-            color: #ffffff;
-            margin-bottom: 2px;
+        .saved-item-name {
+            color: #fff;
+            font-weight: 500;
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
-        .saved-item-desc {
+        .saved-item-url {
+            color: rgba(255, 255, 255, 0.5);
             font-size: 12px;
-            color: #888888;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
-        .item-actions {
-            display: flex;
-            gap: 8px;
-            opacity: 0;
-            transition: opacity 0.2s;
-        }
-
-        .action-button {
-            background: none;
-            border: none;
-            padding: 4px;
-            cursor: pointer;
-            border-radius: 4px;
-            transition: background-color 0.2s;
-        }
-
-        .action-button:hover {
-            background-color: #404040;
-        }
-
-        #contextMenu {
+        /* Toggle Button */
+        #sidebar-toggle {
             position: fixed;
-            background: #2a2a2a;
-            border: 1px solid #404040;
-            border-radius: 4px;
-            padding: 4px 0;
-            min-width: 120px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-            z-index: 1000;
-        }
-
-        .context-menu-item {
-            padding: 8px 12px;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 32px;
+            height: 64px;
+            background: #1a1a1a;
+            border: none;
+            border-radius: 8px 0 0 8px;
+            color: #fff;
             cursor: pointer;
-            transition: background-color 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            z-index: 1000;
+            box-shadow: -5px 0 25px rgba(0, 0, 0, 0.15);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        .context-menu-item:hover {
-            background-color: #363636;
+        #sidebar-container.open ~ #sidebar-toggle {
+            right: 380px;
         }
 
-        .file-input-container {
+        #sidebar-toggle:hover {
+            background: #2a2a2a;
+        }
+
+        .arrow {
+            display: inline-block;
+            transform: rotate(0deg);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 18px;
+        }
+
+        #sidebar-container.open ~ #sidebar-toggle .arrow {
+            transform: rotate(180deg);
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(8px);
+            z-index: 1001;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .modal.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.9);
+            background: #1a1a1a;
+            border-radius: 16px;
+            padding: 24px;
+            width: 90%;
+            max-width: 480px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .modal.show .modal-content {
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 1;
+        }
+
+        .modal-header {
+            margin-bottom: 24px;
+        }
+
+        .modal-title {
+            color: #fff;
+            font-size: 24px;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .modal-body {
+            margin-bottom: 24px;
+        }
+
+        .form-group {
             margin-bottom: 16px;
         }
 
-        .file-input {
-            display: none;
+        .form-group label {
+            display: block;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .modal-input {
+            width: 100%;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 16px;
+            transition: all 0.2s ease;
+        }
+
+        .modal-input:focus {
+            outline: none;
+            border-color: #2196f3;
+            background: rgba(255, 255, 255, 0.1);
         }
 
         .file-input-wrapper {
@@ -387,516 +310,434 @@
         }
 
         #iconPreview {
-            width: 32px;
-            height: 32px;
+            width: 48px;
+            height: 48px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
-            background-color: #363636;
-            border-radius: 6px;
             overflow: hidden;
         }
 
         #iconPreview img {
-            max-width: 24px;
-            max-height: 24px;
+            max-width: 32px;
+            max-height: 32px;
             object-fit: contain;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+        .modal-button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .modal-button.primary {
+            background: #2196f3;
+            color: #fff;
+        }
+
+        .modal-button.primary:hover {
+            background: #1976d2;
+            transform: translateY(-2px);
+        }
+
+        .modal-button.secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+
+        .modal-button.secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+        }
+
+        /* Ayarlar */
+        .settings-section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .settings-section h4 {
+            color: #fff;
+            margin: 0 0 16px 0;
+            font-size: 18px;
+            font-weight: 500;
+        }
+
+        .setting-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .setting-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .setting-label {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: rgba(255, 255, 255, 0.7);
+            cursor: pointer;
+        }
+
+        .setting-label input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            background: transparent;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .setting-label input[type="checkbox"]:checked {
+            background: #2196f3;
+            border-color: #2196f3;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
         }
     </style>
 </head>
 <body>
-    <webview id="webview" src="https://setscript.com/" allowpopups></webview>
+    <div id="webview-container">
+        <webview id="webview" src="https://setscript.com/" allowpopups></webview>
+    </div>
     
     <div id="overlay"></div>
     
+    <button id="sidebar-toggle">
+        <span class="arrow">→</span>
+    </button>
+
     <div id="sidebar-container">
-        <button id="sidebar-toggle">
-            <span class="arrow">→</span>
-        </button>
-        
-        <div id="sidebar">
+        <div class="sidebar-content">
             <div class="sidebar-header">
                 <h2 class="sidebar-title">SetScript</h2>
             </div>
             
-            <div class="sidebar-content">
-
+            <div class="sidebar-actions">
                 <button class="sidebar-button" onclick="showSaveModal()">
                     ➕ Kaydet
                 </button>
+            </div>
 
-                <div class="saved-items" id="savedItems">
-                    <!-- Kaydedilen sayfalar buraya eklenecek -->
+            <div id="savedItems" class="saved-items">
+                <!-- Kaydedilen sayfalar buraya eklenecek -->
+            </div>
+
+            <div class="sidebar-footer">
+                <button class="sidebar-button settings-button" onclick="showSettingsModal()">
+                    ⚙️ Ayarlar
+                </button>
+                <div class="version">
+                    SetScript Desktop v1.0.0
                 </div>
             </div>
-            
-            <div class="sidebar-footer">
-                SetScript Desktop v1.0.0
-            </div>
         </div>
     </div>
 
-    <!-- Context Menu -->
-    <div id="contextMenu" class="context-menu">
-        <div class="context-menu-item edit-menu-item">
-            <span>✏️</span> Düzenle
-        </div>
-        <div class="context-menu-item delete-menu-item">
-            <span>🗑️</span> Sil
-        </div>
-    </div>
-
-    <!-- Save Modal -->
+    <!-- Kaydetme Modal -->
     <div id="saveModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
                 <h3 class="modal-title">Sayfayı Kaydet</h3>
             </div>
             <div class="modal-body">
-                <form id="saveForm" onsubmit="handleSave(event)">
-                    <input type="text" id="pageName" class="modal-input" placeholder="Sayfa İsmi *" required>
-                    <input type="text" id="pageDesc" class="modal-input" placeholder="Açıklama (Opsiyonel)">
-                    <div class="file-input-container">
-                        <input type="file" id="pageIcon" accept="image/*" onchange="previewIcon(event)" class="file-input">
+                <form id="saveForm">
+                    <div class="form-group">
+                        <label for="pageName">Sayfa Adı</label>
+                        <input type="text" id="pageName" class="modal-input" placeholder="Sayfa adını girin" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="pageDesc">Açıklama</label>
+                        <input type="text" id="pageDesc" class="modal-input" placeholder="Sayfa açıklaması (isteğe bağlı)">
+                    </div>
+                    <div class="form-group">
+                        <label for="pageIcon">İkon</label>
                         <div class="file-input-wrapper">
                             <div id="iconPreview"></div>
-                            <button type="button" class="modal-button secondary" onclick="document.getElementById('pageIcon').click()">
-                                İkon Seç (Opsiyonel)
-                            </button>
+                            <input type="file" id="pageIcon" accept="image/*" class="modal-input">
                         </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="modal-button secondary" onclick="hideSaveModal()">İptal</button>
-                        <button type="submit" class="modal-button primary">Kaydet</button>
                     </div>
                 </form>
             </div>
-        </div>
-    </div>
-
-    <!-- Düzenleme Modal -->
-    <div id="editModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title">Kaydı Düzenle</h3>
-            </div>
-            <div class="modal-body">
-                <input type="text" id="editName" class="modal-input" placeholder="İsim">
-                <input type="text" id="editDesc" class="modal-input" placeholder="Açıklama (Opsiyonel)">
-            </div>
             <div class="modal-footer">
-                <button class="modal-button secondary" onclick="hideEditModal()">İptal</button>
-                <button class="modal-button primary" onclick="saveEdit()">Kaydet</button>
+                <button class="modal-button secondary" onclick="hideSaveModal()">İptal</button>
+                <button class="modal-button primary" onclick="savePage()">Kaydet</button>
             </div>
         </div>
     </div>
 
-    <!-- Silme Modal -->
-    <div id="deleteModal" class="modal">
+    <!-- Ayarlar Modal -->
+    <div id="settingsModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 class="modal-title">Kaydı Sil</h3>
+                <h3 class="modal-title">Ayarlar</h3>
             </div>
             <div class="modal-body">
-                <p style="color: #ffffff; margin: 0;">Bu kaydı silmek istediğinize emin misiniz?</p>
-                <p id="deleteItemName" style="color: #888888; margin: 8px 0 0 0;"></p>
+                <div class="settings-section">
+                    <h4>Pencere Ayarları</h4>
+                    <div class="setting-item">
+                        <label class="setting-label">
+                            <input type="checkbox" id="fullscreenToggle">
+                            Tam Ekran
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <label class="setting-label">
+                            <input type="checkbox" id="alwaysOnTopToggle">
+                            Her Zaman Üstte
+                        </label>
+                    </div>
+                </div>
             </div>
             <div class="modal-footer">
-                <button class="modal-button secondary" onclick="hideDeleteModal()">İptal</button>
-                <button class="modal-button danger" onclick="confirmDelete()">Sil</button>
+                <button class="modal-button secondary" onclick="hideSettingsModal()">Kapat</button>
+                <button class="modal-button primary" onclick="saveSettings()">Kaydet</button>
             </div>
         </div>
     </div>
 
     <script>
-        const sidebarContainer = document.getElementById('sidebar-container');
-        const sidebarToggle = document.getElementById('sidebar-toggle');
-        const overlay = document.getElementById('overlay');
-        const webview = document.querySelector('webview');
-        const saveModal = document.getElementById('saveModal');
-        const iconPreview = document.getElementById('iconPreview');
-        const savedItems = document.getElementById('savedItems');
-        const saveForm = document.getElementById('saveForm');
-        let currentWebviewUrl = ''; // WebView'in mevcut URL'sini takip etmek için
+        // Modal göster/gizle fonksiyonları
+        function showModal(modalId) {
+            const modal = document.getElementById(modalId);
+            modal.style.display = 'block';
+            setTimeout(() => modal.classList.add('show'), 10);
+        }
 
-        // Modal işlemleri
+        function hideModal(modalId) {
+            const modal = document.getElementById(modalId);
+            modal.classList.remove('show');
+            setTimeout(() => modal.style.display = 'none', 300);
+        }
+
         function showSaveModal() {
-            saveModal.style.display = 'block';
+            showModal('saveModal');
             document.getElementById('pageName').focus();
         }
 
         function hideSaveModal() {
-            saveModal.style.display = 'none';
-            saveForm.reset();
-            iconPreview.innerHTML = '';
+            hideModal('saveModal');
+            document.getElementById('saveForm').reset();
+            document.getElementById('iconPreview').innerHTML = '';
         }
 
-        // İkon önizleme
-        function previewIcon(event) {
-            const file = event.target.files[0];
-            const preview = document.getElementById('iconPreview');
-            
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    preview.innerHTML = `<img src="${e.target.result}" alt="Icon Preview">`;
-                }
-                reader.readAsDataURL(file);
-            } else {
-                preview.innerHTML = '';
-            }
+        function showSettingsModal() {
+            showModal('settingsModal');
         }
 
-        // Kaydetme işlemi
-        async function handleSave(event) {
-            event.preventDefault();
-            
-            const name = document.getElementById('pageName').value;
-            const iconInput = document.getElementById('pageIcon');
-            const desc = document.getElementById('pageDesc').value;
-            const currentUrl = webview.getURL(); // Anlık URL'yi al
-            
-            console.log('Kaydedilecek URL:', currentUrl);
-            
-            try {
-                if (iconInput.files && iconInput.files[0]) {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        window.electronAPI.savePage({
-                            name,
-                            icon: e.target.result,
-                            desc,
-                            url: currentUrl
-                        });
-                    };
-                    reader.readAsDataURL(iconInput.files[0]);
-                } else {
-                    window.electronAPI.savePage({
-                        name,
-                        icon: '',
-                        desc,
-                        url: currentUrl
-                    });
-                }
-                
-                hideSaveModal();
-            } catch (error) {
-                console.error('Kaydetme hatası:', error);
-            }
+        function hideSettingsModal() {
+            hideModal('settingsModal');
         }
+
+        // ESC tuşu ile modalları kapat
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                if (document.getElementById('saveModal').classList.contains('show')) {
+                    hideSaveModal();
+                }
+                if (document.getElementById('settingsModal').classList.contains('show')) {
+                    hideSettingsModal();
+                }
+                if (sidebarOpen) {
+                    setSidebarState(false);
+                }
+            }
+        });
 
         // Modal dışına tıklandığında kapat
-        window.onclick = function(event) {
-            const saveModal = document.getElementById('saveModal');
-            if (event.target === saveModal) {
-                hideSaveModal();
-            }
-        }
-
-        // Kaydetme tamamlandığında
-        window.electronAPI.onSaveComplete((event, savedItem) => {
-            console.log('Kayıt tamamlandı:', savedItem);
-            addSavedItem(savedItem);
-        });
-
-        // WebView URL değişikliklerini takip et
-        webview.addEventListener('did-navigate', () => {
-            currentWebviewUrl = webview.getURL();
-            console.log('WebView URL değişti:', currentWebviewUrl);
-        });
-
-        webview.addEventListener('did-navigate-in-page', () => {
-            currentWebviewUrl = webview.getURL();
-            console.log('WebView sayfa içi URL değişti:', currentWebviewUrl);
-        });
-
-        // WebView yüklendiğinde
-        webview.addEventListener('did-finish-load', () => {
-            console.log('Sayfa yüklendi:', currentWebviewUrl);
-        });
-
-        // WebView hata durumunda
-        webview.addEventListener('did-fail-load', (error) => {
-            console.error('Sayfa yükleme hatası:', error);
-        });
-
-        function loadSavedPage(url) {
-            if (!url) return;
-            
-            console.log('Sayfaya yönlendiriliyor:', url);
-            try {
-                // URL'yi kontrol et
-                const parsedUrl = new URL(url);
-                if (['http:', 'https:'].includes(parsedUrl.protocol)) {
-                    webview.loadURL(url).catch(err => {
-                        console.error('Yönlendirme hatası:', err);
-                    });
-                } else {
-                    console.error('Geçersiz URL protokolü:', url);
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    hideModal(modal.id);
                 }
-            } catch (error) {
-                console.error('URL işleme hatası:', error);
-            }
-        }
-
-        async function handleSave(event) {
-            event.preventDefault();
-            
-            if (!currentWebviewUrl) {
-                console.error('Geçerli URL bulunamadı');
-                return;
-            }
-
-            console.log('Kaydedilecek URL:', currentWebviewUrl);
-            
-            const name = document.getElementById('pageName').value;
-            const iconInput = document.getElementById('pageIcon');
-            const desc = document.getElementById('pageDesc').value;
-            
-            try {
-                let iconData = '';
-                
-                if (iconInput.files && iconInput.files[0]) {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        window.electronAPI.savePage({
-                            name,
-                            icon: e.target.result,
-                            desc,
-                            url: currentWebviewUrl
-                        });
-                    };
-                    reader.readAsDataURL(iconInput.files[0]);
-                } else {
-                    window.electronAPI.savePage({
-                        name,
-                        icon: '',
-                        desc,
-                        url: currentWebviewUrl
-                    });
-                }
-                
-                hideSaveModal();
-                document.getElementById('saveForm').reset();
-                document.getElementById('iconPreview').innerHTML = '';
-            } catch (error) {
-                console.error('Kaydetme hatası:', error);
-            }
-        }
-
-        // Kaydedilmiş sayfaları yükle
-        window.electronAPI.onSavedPages((event, bookmarks) => {
-            console.log('Kaydedilmiş sayfalar alındı:', bookmarks);
-            savedItems.innerHTML = '';
-            bookmarks.forEach(item => {
-                console.log('Kayıt yükleniyor:', item);
-                addSavedItem(item);
             });
         });
 
-        function addSavedItem(item) {
-            console.log('Kayıt ekleniyor:', item);
-            const defaultIcon = 'public/images/save-icon.png'; // Varsayılan ikon
-            const itemHtml = `
-                <div class="saved-item" data-id="${item.timestamp}" oncontextmenu="showContextMenu(event, this)">
-                    <div class="item-content" onclick="loadSavedPage('${item.url}')">
-                        <div class="saved-item-icon">
-                            <img src="${item.iconPath && item.iconPath.includes('icon_') ? item.iconPath : defaultIcon}" 
-                                 alt="${item.name}" 
-                                 onerror="this.src='${defaultIcon}'" 
-                                 width="24" 
-                                 height="24">
-                        </div>
-                        <div class="saved-item-info">
-                            <div class="saved-item-title">${item.name}</div>
-                            ${item.desc ? `<div class="saved-item-desc">${item.desc}</div>` : ''}
-                        </div>
-                    </div>
-                    <div class="item-actions">
-                        <button class="action-button edit-button" onclick="event.stopPropagation(); showEditModal('${item.timestamp}', '${item.name}', '${item.desc}')">
-                            ✏️
-                        </button>
-                        <button class="action-button delete-button" onclick="event.stopPropagation(); showDeleteModal('${item.timestamp}', '${item.name}')">
-                            🗑️
-                        </button>
-                    </div>
-                </div>
-            `;
-            savedItems.insertAdjacentHTML('afterbegin', itemHtml);
+        // Sidebar yönetimi
+        let sidebarOpen = false;
+        const sidebarContainer = document.getElementById('sidebar-container');
+        const overlay = document.getElementById('overlay');
+        const webview = document.querySelector('webview');
+
+        function saveSidebarState(isOpen) {
+            localStorage.setItem('sidebarOpen', isOpen);
         }
 
-        let currentEditId = null;
-        let currentDeleteId = null;
-
-        // Düzenleme Modal İşlemleri
-        function showEditModal(id, name, desc) {
-            currentEditId = id;
-            document.getElementById('editName').value = name;
-            document.getElementById('editDesc').value = desc || '';
-            document.getElementById('editModal').style.display = 'block';
+        function loadSidebarState() {
+            return localStorage.getItem('sidebarOpen') === 'true';
         }
 
-        function hideEditModal() {
-            document.getElementById('editModal').style.display = 'none';
-            currentEditId = null;
+        function setSidebarState(isOpen) {
+            sidebarOpen = isOpen;
+            if (isOpen) {
+                sidebarContainer.classList.add('open');
+                overlay.classList.add('active');
+                webview.style.pointerEvents = 'none';
+            } else {
+                sidebarContainer.classList.remove('open');
+                overlay.classList.remove('active');
+                webview.style.pointerEvents = 'auto';
+            }
+            saveSidebarState(isOpen);
         }
 
-        function saveEdit() {
-            const name = document.getElementById('editName').value;
-            const desc = document.getElementById('editDesc').value;
+        function toggleSidebar() {
+            setSidebarState(!sidebarOpen);
+        }
 
+        // Sayfa yüklendiğinde
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedState = loadSidebarState();
+            setSidebarState(savedState);
+            
+            // Kaydedilen sayfaları getir
+            window.electronAPI.getSavedPages();
+            
+            // Ayarları getir
+            window.electronAPI.getSettings();
+        });
+
+        // Kaydetme işlemleri
+        async function savePage() {
+            const name = document.getElementById('pageName').value;
             if (!name) {
                 alert('İsim alanı boş olamaz');
                 return;
             }
 
-            window.electronAPI.editBookmark({
-                id: currentEditId,
-                name: name,
-                desc: desc
-            });
+            const iconInput = document.getElementById('pageIcon');
+            const desc = document.getElementById('pageDesc').value;
+            const currentUrl = webview.getURL();
 
-            hideEditModal();
-        }
-
-        // Silme Modal İşlemleri
-        function showDeleteModal(id, name) {
-            currentDeleteId = id;
-            document.getElementById('deleteItemName').textContent = name;
-            document.getElementById('deleteModal').style.display = 'block';
-        }
-
-        function hideDeleteModal() {
-            document.getElementById('deleteModal').style.display = 'none';
-            currentDeleteId = null;
-        }
-
-        function confirmDelete() {
-            if (currentDeleteId) {
-                window.electronAPI.deleteBookmark(currentDeleteId);
-                hideDeleteModal();
-            }
-        }
-
-        // Modal dışına tıklandığında kapat
-        window.onclick = function(event) {
-            const editModal = document.getElementById('editModal');
-            const deleteModal = document.getElementById('deleteModal');
-            
-            if (event.target === editModal) {
-                hideEditModal();
-            }
-            if (event.target === deleteModal) {
-                hideDeleteModal();
-            }
-        }
-
-        // Düzenleme tamamlandığında
-        window.electronAPI.onBookmarkEdited((event, editedBookmark) => {
-            console.log('Düzenleme tamamlandı:', editedBookmark);
-            const item = document.querySelector(`[data-id="${editedBookmark.timestamp}"]`);
-            if (item) {
-                item.querySelector('.saved-item-title').textContent = editedBookmark.name;
-                const descElement = item.querySelector('.saved-item-desc');
-                if (descElement) {
-                    descElement.textContent = editedBookmark.desc || '';
-                }
-            }
-        });
-
-        // Silme tamamlandığında
-        window.electronAPI.onBookmarkDeleted((event, deletedId) => {
-            console.log('Silme tamamlandı:', deletedId);
-            const item = document.querySelector(`[data-id="${deletedId}"]`);
-            if (item) {
-                item.remove();
-            }
-        });
-
-        // Context menu
-        let currentContextItem = null;
-
-        function showContextMenu(event, item) {
-            event.preventDefault();
-            currentContextItem = item;
-            
-            const contextMenu = document.getElementById('contextMenu');
-            contextMenu.style.display = 'block';
-            contextMenu.style.left = `${event.pageX}px`;
-            contextMenu.style.top = `${event.pageY}px`;
-
-            // Context menu dışına tıklandığında kapat
-            document.addEventListener('click', hideContextMenu);
-        }
-
-        function hideContextMenu() {
-            const contextMenu = document.getElementById('contextMenu');
-            contextMenu.style.display = 'none';
-            document.removeEventListener('click', hideContextMenu);
-        }
-
-        // Context menu işlemleri
-        function handleContextMenuAction(action) {
-            if (!currentContextItem) return;
-            
-            const id = currentContextItem.dataset.id;
-            const name = currentContextItem.querySelector('.saved-item-title').textContent;
-            const desc = currentContextItem.querySelector('.saved-item-desc')?.textContent || '';
-            const url = currentContextItem.querySelector('.item-content').getAttribute('onclick').match(/'([^']+)'/)[1];
-
-            if (action === 'edit') {
-                showEditModal(id, name, desc);
-            } else if (action === 'delete') {
-                showDeleteModal(id, name);
-            }
-
-            hideContextMenu();
-        }
-
-        // Sayfa yüklendiğinde kaydedilmiş sayfaları getir
-        window.addEventListener('DOMContentLoaded', () => {
-            console.log('Sayfa yüklendi, kayıtlar isteniyor');
-            window.electronAPI.getSavedPages();
-            
-            // Başlangıç URL'sini ayarla
-            webview.src = 'https://parsher.xyz';
-        });
-
-        // Sidebar işlemleri
-        function toggleSidebar() {
-            sidebarContainer.classList.toggle('open');
-            overlay.classList.toggle('active');
-        }
-
-        sidebarToggle.addEventListener('click', toggleSidebar);
-        
-        overlay.addEventListener('click', () => {
-            if (sidebarContainer.classList.contains('open')) {
-                toggleSidebar();
-            }
-        });
-
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                if (saveModal.style.display === 'block') {
+            try {
+                if (iconInput.files && iconInput.files[0]) {
+                    const reader = new FileReader();
+                    reader.onload = async (e) => {
+                        const pageData = {
+                            name: name,
+                            desc: desc,
+                            url: currentUrl,
+                            icon: e.target.result
+                        };
+                        await window.electronAPI.savePage(pageData);
+                        hideSaveModal();
+                        // Kaydedilen sayfaları yenile
+                        window.electronAPI.getSavedPages();
+                    };
+                    reader.readAsDataURL(iconInput.files[0]);
+                } else {
+                    const pageData = {
+                        name: name,
+                        desc: desc,
+                        url: currentUrl,
+                        icon: ''
+                    };
+                    await window.electronAPI.savePage(pageData);
                     hideSaveModal();
-                } else if (sidebarContainer.classList.contains('open')) {
-                    toggleSidebar();
+                    // Kaydedilen sayfaları yenile
+                    window.electronAPI.getSavedPages();
                 }
+            } catch (error) {
+                console.error('Kaydetme hatası:', error);
+                alert('Sayfa kaydedilirken bir hata oluştu');
+            }
+        }
+
+        // Kaydedilen sayfaları göster
+        window.electronAPI.onSavedPages((event, pages) => {
+            const savedItems = document.getElementById('savedItems');
+            savedItems.innerHTML = '';
+            
+            if (Array.isArray(pages)) {
+                pages.forEach(page => {
+                    const itemHtml = `
+                        <div class="saved-item" data-id="${page.id}">
+                            <div class="saved-item-content" onclick="webview.loadURL('${page.url}')">
+                                <div class="saved-item-icon">
+                                    ${page.icon ? `<img src="${page.icon}" alt="${page.name}">` : ''}
+                                </div>
+                                <div class="saved-item-info">
+                                    <div class="saved-item-name">${page.name}</div>
+                                    <div class="saved-item-url">${page.url}</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    savedItems.insertAdjacentHTML('beforeend', itemHtml);
+                });
             }
         });
 
-        // WebView yüklendiğinde scrollbar'ı gizle
-        webview.addEventListener('dom-ready', () => {
-            webview.insertCSS(`
-                ::-webkit-scrollbar {
-                    display: none !important;
+        // Ayarlar işlemleri
+        window.electronAPI.onSettingsLoaded((event, settings) => {
+            document.getElementById('fullscreenToggle').checked = settings.isFullscreen || false;
+            document.getElementById('alwaysOnTopToggle').checked = settings.isAlwaysOnTop || false;
+        });
+
+        function saveSettings() {
+            const settings = {
+                isFullscreen: document.getElementById('fullscreenToggle').checked,
+                isAlwaysOnTop: document.getElementById('alwaysOnTopToggle').checked
+            };
+            
+            window.electronAPI.saveSettings(settings);
+            hideSettingsModal();
+        }
+
+        // Event listeners
+        document.getElementById('sidebar-toggle').addEventListener('click', toggleSidebar);
+        overlay.addEventListener('click', () => setSidebarState(false));
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && sidebarOpen) {
+                setSidebarState(false);
+            }
+        });
+
+        // İkon önizleme
+        document.getElementById('pageIcon').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('iconPreview').innerHTML = `
+                        <img src="${e.target.result}" alt="Seçilen ikon">
+                    `;
                 }
-                * {
-                    scrollbar-width: none !important;
-                    -ms-overflow-style: none !important;
-                }
-            `);
+                reader.readAsDataURL(file);
+            }
         });
     </script>
 </body>
