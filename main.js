@@ -191,52 +191,28 @@ function startServer() {
 // Ayarlar event handler'ları
 ipcMain.on('save-settings', (event, settings) => {
     try {
-        // SetScript klasörünü kontrol et
-        if (!fs.existsSync(setScriptPath)) {
-            fs.mkdirSync(setScriptPath, { recursive: true });
-        }
-
-        const settingsPath = path.join(setScriptPath, 'settings.json');
-        fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
-
-        // Ayarları uygula
-        if (settings.isFullscreen) {
-            mainWindow.setFullScreen(true);
+        // Ayarları kaydet
+        if (saveSettings(settings)) {
+            // Ayarları uygula
+            applySettings(settings);
+            // Başarılı mesajı gönder
+            event.sender.send('settings-saved', { success: true });
         } else {
-            mainWindow.setFullScreen(false);
+            event.sender.send('settings-saved', { success: false, error: 'Ayarlar kaydedilemedi' });
         }
-
-        mainWindow.setAlwaysOnTop(settings.isAlwaysOnTop);
-
-        // Tüm pencerelere ayarları gönder
-        BrowserWindow.getAllWindows().forEach(window => {
-            window.webContents.send('settings-loaded', settings);
-        });
     } catch (error) {
-        console.error('Ayarları kaydetme hatası:', error);
+        console.error('Ayarlar kaydedilirken hata:', error);
+        event.sender.send('settings-saved', { success: false, error: error.message });
     }
 });
 
 ipcMain.on('get-settings', (event) => {
     try {
-        const settingsPath = path.join(setScriptPath, 'settings.json');
-        let settings = {
-            isFullscreen: false,
-            isAlwaysOnTop: false
-        };
-
-        if (fs.existsSync(settingsPath)) {
-            const data = fs.readFileSync(settingsPath, 'utf8');
-            settings = JSON.parse(data);
-        }
-
+        const settings = loadSettings();
         event.sender.send('settings-loaded', settings);
     } catch (error) {
-        console.error('Ayarları yükleme hatası:', error);
-        event.sender.send('settings-loaded', {
-            isFullscreen: false,
-            isAlwaysOnTop: false
-        });
+        console.error('Ayarlar yüklenirken hata:', error);
+        event.sender.send('settings-loaded', defaultSettings);
     }
 });
 
@@ -285,7 +261,7 @@ ipcMain.handle('save-page', async (event, pageData) => {
     }
 });
 
-// Kaydedilmiş sayfaları getir
+// Kaydedilen sayfaları getir
 ipcMain.handle('get-saved-pages', async () => {
     try {
         const bookmarksPath = path.join(setScriptPath, 'bookmarks.json');
@@ -295,8 +271,47 @@ ipcMain.handle('get-saved-pages', async () => {
         }
         return [];
     } catch (error) {
-        console.error('Kaydedilmiş sayfaları getirme hatası:', error);
-        return [];
+        console.error('Kaydedilen sayfalar getirilirken hata:', error);
+        throw error;
+    }
+});
+
+// Belirli bir sayfayı getir
+ipcMain.handle('get-page', async (event, pageId) => {
+    try {
+        const bookmarksPath = path.join(setScriptPath, 'bookmarks.json');
+        if (fs.existsSync(bookmarksPath)) {
+            const data = fs.readFileSync(bookmarksPath, 'utf8');
+            const pages = JSON.parse(data);
+            return pages.find(page => page.id === pageId);
+        }
+        return null;
+    } catch (error) {
+        console.error('Sayfa getirilirken hata:', error);
+        throw error;
+    }
+});
+
+// Sayfa silme işlemi
+ipcMain.handle('delete-page', async (event, pageId) => {
+    try {
+        const bookmarksPath = path.join(setScriptPath, 'bookmarks.json');
+        if (fs.existsSync(bookmarksPath)) {
+            let bookmarks = JSON.parse(fs.readFileSync(bookmarksPath, 'utf8'));
+            bookmarks = bookmarks.filter(page => page.id !== pageId);
+            fs.writeFileSync(bookmarksPath, JSON.stringify(bookmarks, null, 2));
+
+            // Tüm pencerelere güncel listeyi gönder
+            BrowserWindow.getAllWindows().forEach(window => {
+                window.webContents.send('saved-pages', bookmarks);
+            });
+
+            return { success: true };
+        }
+        return { success: false, error: 'Bookmarks dosyası bulunamadı' };
+    } catch (error) {
+        console.error('Sayfa silme hatası:', error);
+        throw error;
     }
 });
 
@@ -389,29 +404,6 @@ function loadOfflinePage(id) {
     }
 }
 
-// Sayfa silme işlemi
-ipcMain.handle('delete-page', async (event, pageId) => {
-    try {
-        const bookmarksPath = path.join(setScriptPath, 'bookmarks.json');
-        if (fs.existsSync(bookmarksPath)) {
-            let bookmarks = JSON.parse(fs.readFileSync(bookmarksPath, 'utf8'));
-            bookmarks = bookmarks.filter(page => page.id !== pageId);
-            fs.writeFileSync(bookmarksPath, JSON.stringify(bookmarks, null, 2));
-
-            // Tüm pencerelere güncel listeyi gönder
-            BrowserWindow.getAllWindows().forEach(window => {
-                window.webContents.send('saved-pages', bookmarks);
-            });
-
-            return { success: true };
-        }
-        return { success: false, error: 'Bookmarks dosyası bulunamadı' };
-    } catch (error) {
-        console.error('Sayfa silme hatası:', error);
-        throw error;
-    }
-});
-
 // Düzenleme işlemi
 ipcMain.on('edit-bookmark', async (event, data) => {
     try {
@@ -499,6 +491,38 @@ ipcMain.on('delete-bookmark', async (event, id) => {
     } catch (error) {
         console.error('Silme hatası:', error);
         event.reply('bookmark-deleted-error', error.message);
+    }
+});
+
+// Sayfa güncelleme işlemi
+ipcMain.handle('update-page', async (event, pageData) => {
+    try {
+        const bookmarksPath = path.join(setScriptPath, 'bookmarks.json');
+        let bookmarks = [];
+
+        if (fs.existsSync(bookmarksPath)) {
+            const data = fs.readFileSync(bookmarksPath, 'utf8');
+            bookmarks = JSON.parse(data);
+        }
+
+        const pageIndex = bookmarks.findIndex(page => page.id === pageData.id);
+        if (pageIndex !== -1) {
+            // Mevcut sayfayı güncelle
+            bookmarks[pageIndex] = {
+                ...bookmarks[pageIndex],
+                name: pageData.name,
+                description: pageData.description,
+                updatedAt: new Date().toISOString()
+            };
+
+            fs.writeFileSync(bookmarksPath, JSON.stringify(bookmarks, null, 2));
+            return { success: true };
+        } else {
+            throw new Error('Sayfa bulunamadı');
+        }
+    } catch (error) {
+        console.error('Sayfa güncelleme hatası:', error);
+        throw error;
     }
 });
 
