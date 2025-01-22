@@ -14,6 +14,11 @@ SetScript Desktop, yeni nesil kod paylaşım platformu SetScript'in resmi masaü
 - Özelleştirilebilir ayarlar
 - Modern ve kullanıcı dostu arayüz
 
+##### Downloads
+| Version | Type | Download Link |
+| ---- | ---- | ----------- |
+| v0.0.1 | Alpha | This version is closed for download |
+
 ## Teknoloji Altyapısı
 
 - **Framework**: Electron.js
@@ -97,5 +102,5 @@ Bu proje MIT Lisansı ile lisanslanmıştır - detaylar için [LICENSE](LICENSE)
 ---
 
 <p align="center">
-  SetScript Ekibi tarafından ❤️ ile yapıldı
+  github@parsherr tarafından ❤️ ile yapıldı
 </p>
