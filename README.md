@@ -19,6 +19,16 @@ SetScript Desktop, yeni nesil kod paylaşım platformu SetScript'in resmi masaü
 | ---- | ---- | ----------- |
 | v0.0.1 | Alpha | This version is closed for download |
 
+## Star History
+
+<a href="https://star-history.com/#setscript/SetScript-Desktop&Date">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=setscript/SetScript-Desktop&type=Date&theme=dark" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=setscript/SetScript-Desktop&type=Date" />
+   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=setscript/SetScript-Desktop&type=Date" />
+ </picture>
+</a>
+
 ## Teknoloji Altyapısı
 
 - **Framework**: Electron.js
