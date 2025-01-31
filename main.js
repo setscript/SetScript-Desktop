@@ -4,6 +4,7 @@ const fs = require('fs');
 const express = require('express');
 const ejs = require('ejs');
 const expressApp = express();
+const RPC = require('discord-rpc');
 
 let mainWindow;
 let server;
@@ -26,11 +27,11 @@ function loadSettings() {
     try {
         if (fs.existsSync(settingsPath)) {
             const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
-            console.log('Ayarlar yüklendi:', settings);
+            console.log('Ayarlar yuklendi:', settings);
             return { ...defaultSettings, ...settings };
         }
     } catch (error) {
-        console.error('Ayarlar yüklenirken hata:', error);
+        console.error('Ayarlar yuklenirken hata:', error);
     }
     return defaultSettings;
 }
@@ -54,7 +55,7 @@ function saveSettings(settings) {
 function applySettings(settings) {
     if (!mainWindow) return;
 
-    console.log('Ayarlar uygulanıyor:', settings);
+    console.log('Ayarlar uygulaniyor:', settings);
 
     // Tam ekran ayarı
     mainWindow.setFullScreen(settings.isFullscreen);
@@ -64,6 +65,34 @@ function applySettings(settings) {
 
     // Ayarları kaydet
     saveSettings(settings);
+}
+
+// Discord Presence
+
+const clientId = '1334819590710231072'; 
+
+
+DiscordRPC();
+
+function DiscordRPC() {
+    const rpc = new RPC.Client({ transport: 'ipc' });
+
+    rpc.on('ready', () => {
+        console.log('Discord RPC baglaniyor!');
+
+        rpc.setActivity({
+            details: 'Türkiyenin En iyi yazılım Platformu', 
+            state: 'Göz atıyor...', 
+            startTimestamp: Date.now(),
+            largeImageKey: 'large', 
+            largeImageText: 'SetScript',
+            smallImageKey: 'icon',
+            smallImageText: 'Çalışıyor',
+            instance: false
+        });
+    });
+
+    rpc.login({ clientId }).catch(console.error);
 }
 
 async function createWindow() {
@@ -77,13 +106,14 @@ async function createWindow() {
     if (!fs.existsSync(offlinePagesPath)) {
         fs.mkdirSync(offlinePagesPath, { recursive: true });
     }
-
+    const iconPath = path.join(__dirname, 'assets', 'icon.png');
     // Ayarları yükle
     const settings = loadSettings();
     
     mainWindow = new BrowserWindow({
         width: 1200,
         height: 800,
+        icon: iconPath,
         frame: true,
         autoHideMenuBar: true,
         fullscreen: settings.isFullscreen,
@@ -163,7 +193,7 @@ function startServer() {
     return new Promise((resolve, reject) => {
         server = expressApp.listen(0, () => {
             const port = server.address().port;
-            console.log(`Express server çalışıyor: http://localhost:${port}`);
+            console.log(`Express server calisiyor: http://localhost:${port}`);
             resolve(`http://localhost:${port}`);
         });
     });
@@ -192,7 +222,7 @@ ipcMain.on('get-settings', (event) => {
         const settings = loadSettings();
         event.sender.send('settings-loaded', settings);
     } catch (error) {
-        console.error('Ayarlar yüklenirken hata:', error);
+        console.error('Ayarlar yuklenirken hata:', error);
         event.sender.send('settings-loaded', defaultSettings);
     }
 });
@@ -237,7 +267,7 @@ ipcMain.handle('save-page', async (event, pageData) => {
 
         return { success: true, bookmark: newBookmark };
     } catch (error) {
-        console.error('Sayfa kaydetme hatası:', error);
+        console.error('Sayfa kaydetme hatasi:', error);
         throw error;
     }
 });
@@ -291,7 +321,7 @@ ipcMain.handle('delete-page', async (event, pageId) => {
         }
         return { success: false, error: 'Bookmarks dosyası bulunamadı' };
     } catch (error) {
-        console.error('Sayfa silme hatası:', error);
+        console.error('Sayfa silme hatasi:', error);
         throw error;
     }
 });
@@ -301,6 +331,8 @@ ipcMain.handle('get-webview-url', async (event) => {
     const webContents = event.sender;
     return webContents.getURL();
 });
+
+
 
 // WebView güvenlik ayarları
 app.on('web-contents-created', (event, contents) => {
@@ -323,7 +355,7 @@ app.on('web-contents-created', (event, contents) => {
 
         // Hata durumunda
         contents.on('did-fail-load', (event, errorCode, errorDescription) => {
-            console.error('WebView yükleme hatası:', errorCode, errorDescription);
+            console.error('WebView yukleme hatasi:', errorCode, errorDescription);
         });
     }
 });
@@ -342,7 +374,7 @@ async function savePageOffline(url, id) {
 
         // Eğer otomatik önizleme açıksa
         if (settings.isAlwaysOnTop) {
-            // Webview kullanarak sayfanın ekran görüntüsünü al
+            // Webview kullanarak sayfanın ekran göruntüsünü al
             const view = new BrowserView({
                 webPreferences: {
                     offscreen: true
@@ -366,7 +398,7 @@ async function savePageOffline(url, id) {
 
         return true;
     } catch (error) {
-        console.error('Sayfa çevrimdışı kaydedilirken hata:', error);
+        console.error('Sayfa cevrimdisi kaydedilirken hata:', error);
         return false;
     }
 }
@@ -380,7 +412,7 @@ function loadOfflinePage(id) {
         }
         return null;
     } catch (error) {
-        console.error('Çevrimdışı sayfa yüklenirken hata:', error);
+        console.error('Cevrimdisi sayfa yuklenirken hata:', error);
         return null;
     }
 }
@@ -388,7 +420,7 @@ function loadOfflinePage(id) {
 // Düzenleme işlemi
 ipcMain.on('edit-bookmark', async (event, data) => {
     try {
-        console.log('Düzenleme başlatıldı:', data);
+        console.log('Duzenleme baslatildi:', data);
         const jsonPath = path.join(setScriptPath, 'bookmarks.json');
         
         // JSON dosyasını oku
@@ -423,7 +455,7 @@ ipcMain.on('edit-bookmark', async (event, data) => {
         // Tüm kayıtları yeniden yükle
         mainWindow.webContents.send('saved-pages', bookmarks);
     } catch (error) {
-        console.error('Düzenleme hatası:', error);
+        console.error('Duzenleme hatasi:', error);
         event.reply('bookmark-edited-error', error.message);
     }
 });
@@ -431,7 +463,7 @@ ipcMain.on('edit-bookmark', async (event, data) => {
 // Silme işlemi
 ipcMain.on('delete-bookmark', async (event, id) => {
     try {
-        console.log('Silme başlatıldı:', id);
+        console.log('Silme baslatildi:', id);
         const jsonPath = path.join(setScriptPath, 'bookmarks.json');
         
         // JSON dosyasını oku
@@ -470,7 +502,7 @@ ipcMain.on('delete-bookmark', async (event, id) => {
         // Tüm kayıtları yeniden yükle
         mainWindow.webContents.send('saved-pages', bookmarks);
     } catch (error) {
-        console.error('Silme hatası:', error);
+        console.error('Silme hatasi:', error);
         event.reply('bookmark-deleted-error', error.message);
     }
 });
@@ -502,7 +534,7 @@ ipcMain.handle('update-page', async (event, pageData) => {
             throw new Error('Sayfa bulunamadı');
         }
     } catch (error) {
-        console.error('Sayfa güncelleme hatası:', error);
+        console.error('Sayfa guncelleme hatasi:', error);
         throw error;
     }
 });
@@ -512,7 +544,7 @@ app.whenReady().then(async () => {
     try {
         await createWindow();
     } catch (error) {
-        console.error('Uygulama başlatma hatası:', error);
+        console.error('Uygulama baslatma hatasi:', error);
     }
 });
 
@@ -526,4 +558,8 @@ app.on('activate', () => {
     if (mainWindow === null) {
         createWindow();
     }
+});
+
+app.on('ready', () => {
+    DiscordRPC();
 });
