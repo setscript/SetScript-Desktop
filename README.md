@@ -2,7 +2,7 @@
 
 ![SetScript Banner](https://socialify.git.ci/setscript/SetScript-Desktop/image?description=1&font=Inter&forks=1&language=1&name=1&owner=1&pattern=Floating+Cogs&stargazers=1&theme=Dark)
 
-SetScript Desktop, yeni nesil kod paylaşım platformu SetScript'in resmi masaüstü uygulamasıdır. ![https://setscript.com](https://setscript.com)'un tüm özelliklerine ekstra olarak masa üstü programına özel özellikleri ve çevrimdışı destek ile masaüstünüzde deneyimleyin.
+SetScript Desktop, yeni nesil kod paylaşım platformu SetScript'in resmi masaüstü uygulamasıdır. ![setscript.com](https://setscript.com)'un tüm özelliklerine ekstra olarak masa üstü programına özel özellikleri ve çevrimdışı destek ile masaüstünüzde deneyimleyin.
 
 ## Özellikler
 
