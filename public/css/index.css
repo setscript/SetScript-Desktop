@@ -253,6 +253,9 @@ body {
 }
 
 .modal-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
     position: absolute;
     top: 50%;
     left: 50%;
@@ -262,6 +265,8 @@ body {
     padding: 24px;
     width: 90%;
     max-width: 480px;
+    max-height: calc(100vh - 64px);
+    overflow-y: auto;
     box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
     opacity: 0;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -284,7 +289,7 @@ body {
 }
 
 .modal-body {
-    margin-bottom: 24px;
+    flex: 1;
 }
 
 .form-group {
@@ -341,7 +346,8 @@ body {
 .modal-footer {
     display: flex;
     justify-content: flex-end;
-    gap: 12px;
+    gap: 10px;
+    padding-top: 10px;
 }
 
 .modal-button {
